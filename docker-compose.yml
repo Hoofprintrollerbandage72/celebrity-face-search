@@ -1,0 +1,17 @@
+services:
+  face-search:
+    build:
+      context: .
+      args:
+        INSTALL_DEEPFACE: "0"
+    ports:
+      - "8000:8000"
+    environment:
+      FACE_ENGINE: ${FACE_ENGINE:-opencv_sface}
+      OPENCV_MODEL_DIR: /app/data/models
+      DEEPFACE_MODEL: ${DEEPFACE_MODEL:-Facenet512}
+      DEEPFACE_DETECTOR: ${DEEPFACE_DETECTOR:-opencv}
+      APP_DATA_DIR: /app/data
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

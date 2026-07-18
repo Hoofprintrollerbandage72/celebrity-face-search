@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>公众人物人脸检索</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div>
+        <p class="eyebrow">FACE RETRIEVAL</p>
+        <h1>公众人物人脸检索</h1>
+      </div>
+      <nav>
+        <button class="nav-button active" data-view="search">图片检索</button>
+        <button class="nav-button" data-view="library">人物库</button>
+      </nav>
+    </header>
+
+    <main>
+      <div id="engine-banner" class="banner hidden"></div>
+
+      <section id="search-view" class="view active">
+        <div class="search-layout">
+          <div class="panel upload-panel">
+            <div id="drop-zone" class="drop-zone" tabindex="0">
+              <input id="search-file" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+              <div id="upload-placeholder">
+                <span class="upload-icon">＋</span>
+                <h2>上传待检索图片</h2>
+                <p>拖放图片到这里，或点击选择文件</p>
+                <small>支持 JPEG、PNG、WEBP，最多 10 MB</small>
+              </div>
+              <img id="search-preview" class="preview hidden" alt="待检索图片预览" />
+            </div>
+            <div class="search-controls">
+              <label>
+                返回数量
+                <select id="top-k">
+                  <option value="3">Top 3</option>
+                  <option value="5" selected>Top 5</option>
+                  <option value="10">Top 10</option>
+                  <option value="20">Top 20</option>
+                </select>
+              </label>
+              <button id="search-button" class="primary-button" disabled>开始检索</button>
+            </div>
+          </div>
+
+          <div class="panel results-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">RESULTS</p>
+                <h2>相似人物</h2>
+              </div>
+              <span id="library-count" class="status-chip">人物库加载中</span>
+            </div>
+            <div id="search-status" class="empty-state">
+              <div class="radar"></div>
+              <p>上传图片后开始检索</p>
+            </div>
+            <div id="results" class="results-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="library-view" class="view">
+        <div class="library-layout">
+          <div class="panel quick-source-panel">
+            <div class="quick-source-intro">
+              <div>
+                <p class="eyebrow">QUICK SOURCE SETUP</p>
+                <h2>图片源快速配置</h2>
+                <p class="helper-text">一次完成建档、下载、单人脸校验、向量生成和人物关联。</p>
+              </div>
+              <ol class="source-steps">
+                <li>选择人物</li>
+                <li>粘贴图片直链</li>
+                <li>一键下载并关联</li>
+              </ol>
+            </div>
+            <form id="quick-source-form" class="quick-source-form">
+              <div class="quick-target-fields">
+                <label>
+                  检索已有人物
+                  <input id="quick-person-search" placeholder="输入姓名或外部 ID" autocomplete="off" />
+                </label>
+                <label>
+                  关联目标
+                  <select id="quick-person-select" name="person_id" required>
+                    <option value="__new__">＋ 同时创建新人物</option>
+                  </select>
+                </label>
+              </div>
+              <div id="quick-new-person" class="quick-target-fields">
+                <label>新人物姓名<input name="name" maxlength="200" placeholder="例如 Jane Doe" /></label>
+                <label>外部 ID<input name="external_id" maxlength="200" placeholder="可选，用于避免重复建档" /></label>
+                <label>别名<input name="aliases" placeholder="可选，使用逗号分隔" /></label>
+              </div>
+              <label>
+                图片源（每行一个）
+                <textarea name="sources" rows="5" required placeholder="https://example.com/portrait-01.jpg | https://example.com/source-page&#10;https://example.com/portrait-02.jpg"></textarea>
+                <small>格式：图片直链 | 可选的来源页面。最多 20 张，仅下载公开 HTTP(S) 地址。</small>
+              </label>
+              <label>默认许可证或授权备注<input name="license_code" maxlength="200" placeholder="例如 CC BY 4.0 / 已获授权" /></label>
+              <div class="quick-source-actions">
+                <button class="primary-button" type="submit">一键下载并关联</button>
+                <span>参考图须恰好包含一张清晰人脸；失败条目不会影响其他图片。</span>
+              </div>
+            </form>
+            <div id="quick-source-result" class="import-result hidden" aria-live="polite"></div>
+          </div>
+
+          <div class="panel form-panel">
+            <p class="eyebrow">NEW IDENTITY</p>
+            <h2>新增人物</h2>
+            <form id="person-form">
+              <label>姓名<input name="name" required maxlength="200" /></label>
+              <label>外部 ID<input name="external_id" placeholder="例如 Wikidata QID" /></label>
+              <label>别名<input name="aliases" placeholder="使用逗号分隔" /></label>
+              <button class="primary-button" type="submit">创建人物</button>
+            </form>
+          </div>
+
+          <div class="panel form-panel">
+            <p class="eyebrow">REFERENCE IMAGE</p>
+            <h2>添加参考图</h2>
+            <form id="reference-form">
+              <label>人物<select id="person-select" name="person_id" required></select></label>
+              <label>图片<input name="image" type="file" accept="image/jpeg,image/png,image/webp" required /></label>
+              <label>图片直链<input name="source_url" type="url" placeholder="https://" /></label>
+              <label>来源页面<input name="source_page_url" type="url" placeholder="https://" /></label>
+              <label>许可证<input name="license_code" placeholder="例如 CC BY 4.0" /></label>
+              <button class="primary-button" type="submit">上传并生成向量</button>
+            </form>
+          </div>
+
+          <div class="panel people-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">LIBRARY</p>
+                <h2>已录入人物</h2>
+              </div>
+              <button id="refresh-library" class="ghost-button">刷新</button>
+            </div>
+            <div id="people-list" class="people-list"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+    <script src="/assets/app.js" defer></script>
+  </body>
+</html>
