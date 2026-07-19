@@ -1,56 +1,84 @@
-# 公众人物人脸检索 MVP
+# Celebrity Face Search · 公众人物人脸检索
 
-一个收敛到核心流程的本地系统：
+一个本地优先的公众人物人脸相似检索 MVP：上传图片，检测其中的人脸，与本地参考人物库进行向量检索，并返回按人物聚合的 Top-K 候选。
 
-1. 建立人物及参考图片库；
-2. 上传待检索图片；
-3. 检测图片中的人脸并提取向量；
-4. 返回 Top-K 相似人物和参考图。
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![OpenCV SFace](https://img.shields.io/badge/OpenCV-YuNet%20%2B%20SFace-5C3EE8?logo=opencv&logoColor=white)](https://github.com/opencv/opencv_zoo)
+[![Tests](https://img.shields.io/badge/tests-8%20passed-brightgreen)](#测试)
 
-系统不采集使用场景，也不输出法律结论。相似度只表示模型特征接近程度。
+> [!IMPORTANT]
+> 相似度是模型特征距离，不是身份概率、身份确认或法律结论。本项目不判断肖像权、版权、隐私权或其他侵权责任。
 
-## 已实现
+## 界面预览
 
-- 浏览器上传、拖放和图片预览；
-- 多人脸查询结果结构；
-- 人物创建、删除和参考图上传；
-- 图片源引导与一键下载、单人脸校验、建档和关联；
-- SQLite 元数据和本地图片存储；
-- 内存 NumPy 余弦相似度索引；
-- 按人物聚合多张参考图片；
-- DeepFace 可插拔识别引擎；
-- 批量目录导入脚本；
-- CelebA / VGGFace2 可断点批量导入、数据集计数和索引重载；
-- 文件类型、大小及空库检查；
-- API 自动文档和基础测试。
+### 上传图片并检索相似人物
 
-## 一键启动真实 MVP
+![图片检索首页](docs/images/search-home.png)
+
+### 从图片源一键下载并关联人物
+
+![图片源快速配置](docs/images/library-quick-source.png)
+
+## 核心能力
+
+- 浏览器上传、拖放、预览与多人脸查询；
+- OpenCV YuNet 人脸检测和 SFace 人脸特征提取；
+- 人物创建、删除、别名、外部 ID 和多参考图管理；
+- 图片源一键配置：下载、格式验证、单人脸校验、向量生成和人物关联；
+- 图片直链、来源页面和许可证/授权备注追溯；
+- SQLite 元数据、本地文件存储和 NumPy 余弦相似度索引；
+- 多参考图按人物聚合，返回 Top-K 人物候选；
+- CelebA / VGGFace2 身份元数据及参考图断点导入；
+- 私网地址拦截、重定向校验、下载大小限制和重复源幂等；
+- FastAPI OpenAPI 文档、Docker 运行方式和自动化测试。
+
+## 工作流程
+
+```mermaid
+flowchart LR
+    A["上传查询图"] --> B["检测人脸"]
+    B --> C["提取归一化向量"]
+    C --> D["余弦相似度检索"]
+    D --> E["按人物聚合多张参考图"]
+    E --> F["返回 Top-K 候选与来源"]
+
+    G["人物与图片源"] --> H["下载和安全校验"]
+    H --> I["单人脸校验"]
+    I --> J["本地存储与向量入库"]
+    J --> D
+```
+
+## 快速开始
+
+### 真实人脸检索模式
+
+需要 Python 3.11 或更高版本，以及可访问 OpenCV 官方模型源的网络环境：
 
 ```bash
+git clone https://github.com/yubowen123/celebrity-face-search.git
+cd celebrity-face-search
 ./scripts/start_mvp.sh
 ```
 
-脚本会检查 Python 依赖、下载并校验 OpenCV YuNet + SFace 模型，然后在
-<http://127.0.0.1:8000> 启动服务。首次执行需要下载约 37 MB 模型文件。
+首次启动会创建 `.venv`、安装依赖，并下载及校验约 37 MB 的 YuNet 与 SFace 模型。随后访问：
 
-模型来源于 OpenCV 官方模型库。YuNet 目录为 MIT，SFace 目录为 Apache 2.0。
+- 应用界面：<http://127.0.0.1:8000>
+- API 文档：<http://127.0.0.1:8000/docs>
+- 健康检查：<http://127.0.0.1:8000/api/health>
 
-启动后可在另一个终端执行真实闭环演示：
+在另一个终端运行真实图片闭环演示：
 
 ```bash
 source .venv/bin/activate
-python scripts/seed_demo_library.py
+python3 scripts/seed_demo_library.py
 ```
 
-脚本会从 Wikimedia Commons 下载两位公众人物的带来源参考图，录入人物库，
-再使用不同年份的 Donald Trump 图片检索并验证 Top-1。演示文件及模型都位于
-被 Git 忽略的 `data/` 目录。
+演示脚本会从 Wikimedia Commons 下载带来源记录的公众人物图片，录入参考图并验证不同年份图片的 Top-1 检索。图片、模型和数据库都写入被 Git 忽略的 `data/`。
 
-## 其他运行模式
+### 轻量流程演示模式
 
-### 1. 立即运行界面和流程
-
-`demo` 引擎使用整图颜色与灰度特征，仅用于测试系统流程，不具备真实身份识别能力。
+`demo` 引擎只使用整图颜色与灰度特征，用于验证界面和数据流程，不具备真实身份识别能力：
 
 ```bash
 python3 -m venv .venv
@@ -59,55 +87,89 @@ pip install -r requirements.txt
 FACE_ENGINE=demo uvicorn app.main:app --reload
 ```
 
-访问 <http://localhost:8000>，API 文档位于 <http://localhost:8000/docs>。
-
-### 2. DeepFace 可选引擎
-
-如需对比 DeepFace，可通过 Docker 使用固定的 Python 3.11 环境：
+### Docker / DeepFace 可选模式
 
 ```bash
 docker compose up --build
 ```
 
-第一次提取人脸时 DeepFace 可能下载所选模型权重。下载完成后即可录入参考图并进行检索。
-
-也可以在兼容的 Python 环境中运行：
+也可以在兼容环境中直接安装：
 
 ```bash
 pip install -r requirements-deepface.txt
 FACE_ENGINE=deepface uvicorn app.main:app --reload
 ```
 
-## 建立人物库
+DeepFace 框架许可证不自动覆盖其加载的模型权重和训练数据，请分别核对用途限制。
 
-可以通过网页“人物库”页面逐个录入，也可以准备以下目录：
+## 三分钟使用流程
 
-### 图片源一键配置
+1. 打开“人物库”，创建人物或选择已有身份。
+2. 手工上传一张单人参考图，或使用“图片源快速配置”批量导入。
+3. 回到“图片检索”，上传待检索图片。
+4. 选择返回数量并开始检索。
+5. 查看候选人物、模型相似度、最佳参考图及其来源。
 
-打开“人物库 → 图片源快速配置”，选择一个已有人物，或填写姓名以同时创建
-新人物。图片源每行填写一个，竖线右侧可选填可核验的来源页面：
+真实人脸引擎下，每张参考图必须恰好检测到一张人脸。建议每个人物录入 3—10 张不同年龄、角度、光线和妆容的合法参考图片。
+
+## 图片源一键配置
+
+在“人物库 → 图片源快速配置”中选择已有身份，或在同一次操作中创建人物。每行填写一个图片直链，竖线右侧可填写可核验的来源页面：
 
 ```text
 https://images.example.org/person/portrait-01.jpg | https://example.org/photo-page-01
 https://images.example.org/person/portrait-02.jpg | https://example.org/photo-page-02
 ```
 
-填写许可证或授权备注后点击“一键下载并关联”。系统会逐张完成：
+点击“一键下载并关联”后，系统逐张执行：
 
-1. 校验公开 HTTP(S) 地址并拦截本机、内网和保留地址；
-2. 限制下载大小和跳转次数，验证 JPEG、PNG 或 WEBP 文件；
-3. 要求参考图恰好检测到一张人脸；
-4. 保存原图到本地、写入来源和授权信息、生成向量并关联人物；
-5. 一次重载索引，并汇总成功、重复跳过和失败条目。
+1. 验证公开 HTTP(S) 地址并阻止本机、私网和保留 IP；
+2. 校验每次重定向，限制连接时间、响应大小和跳转次数；
+3. 验证 JPEG、PNG 或 WEBP 的真实文件内容；
+4. 要求图片恰好包含一张可检测人脸；
+5. 保存本地图片、来源和许可证记录，生成向量并关联人物；
+6. 汇总成功、重复跳过和失败条目，并重载检索索引。
 
-同一人物重复提交同一图片直链时会自动跳过，不会重复入库。每次最多处理
-20 个图片源。接口说明可查看 `GET /api/library/source-guide` 和
-`POST /api/library/quick-source-import`。
+每次最多处理 20 个图片源；同一人物重复提交相同图片直链时会自动跳过。
 
-> 图片直链是服务器实际下载的地址；来源页面用于人工回溯作者、许可证和上下文。
-> 记录来源不代表自动获得肖像权、版权或生物识别数据处理授权。
+## API 快速示例
 
-### 本地目录批量导入
+创建人物：
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/library/persons \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Example Person","external_id":"wikidata:Q0000","aliases":[]}'
+```
+
+使用远程图片源创建人物并导入参考图：
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/library/quick-source-import \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "person": {"name": "Example Person", "external_id": "example:person"},
+    "sources": [{
+      "image_url": "https://images.example.org/portrait.jpg",
+      "source_page_url": "https://example.org/photo-page",
+      "license_code": "CC BY 4.0"
+    }]
+  }'
+```
+
+上传图片检索：
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/search \
+  -F 'image=@./query.jpg' \
+  -F 'top_k=5'
+```
+
+完整字段、响应和错误处理示例见 [`docs/API使用示例.md`](docs/API使用示例.md)。
+
+## 本地目录批量导入
+
+准备目录：
 
 ```text
 my-library/
@@ -119,87 +181,96 @@ my-library/
     └── 02.jpg
 ```
 
-然后批量导入：
+执行导入：
 
 ```bash
 python3 scripts/import_library.py ./my-library --license "CC BY 4.0"
 ```
 
-参考图在真实人脸引擎下必须恰好检测到一张人脸。每位人物建议录入 3—10 张不同年龄、角度和妆容的照片。
+## CelebA 与 VGGFace2
 
-### 导入 CelebA 与 VGGFace2
-
-先录入两个数据集的全部身份元数据：
+仓库不包含 CelebA、VGGFace2 图片、人物向量或模型权重。导入器只在本地下载和处理数据，并支持断点恢复。
 
 ```bash
 source .venv/bin/activate
-python scripts/import_research_datasets.py bootstrap --dataset all
+python3 scripts/import_research_datasets.py bootstrap --dataset all
+python3 scripts/import_research_datasets.py celeba --images-per-identity 5
+python3 scripts/import_research_datasets.py download-vgg --which all
+python3 scripts/import_research_datasets.py vggface2 --which all --images-per-identity 5
+python3 scripts/import_research_datasets.py status
 ```
 
-默认每个身份选取 5 张能成功检测到人脸的参考图。CelebA 从 Hugging Face
-Parquet 流式读取并保存断点：
+- CelebA 只公开匿名 `celeb_id`，库内显示为 `CelebA #00001` 等匿名身份；
+- VGGFace2 使用其 `identity_meta.csv` 中的身份名称；
+- 两个数据集均有各自的用途、访问和再分发限制；
+- 请勿把研究数据集或网络图片直接当作可商用人物库。
 
-```bash
-python scripts/import_research_datasets.py celeba --images-per-identity 5
-```
-
-VGGFace2 先断点下载约 40.2 GB 的两个归档，再流式遍历归档，不展开全部
-330 万张图片，只保留每人需要的参考图：
-
-```bash
-python scripts/import_research_datasets.py download-vgg --which all
-python scripts/import_research_datasets.py vggface2 --which all --images-per-identity 5
-```
-
-查看实际写入数量：
-
-```bash
-python scripts/import_research_datasets.py status
-curl http://127.0.0.1:8000/api/library/stats
-```
-
-CelebA 只公开匿名 `celeb_id`，因此库内名称为 `CelebA #00001`；VGGFace2
-使用 `identity_meta.csv` 中的姓名。详细来源、限制、断点文件和恢复方法见
-[`docs/数据集导入说明.md`](docs/数据集导入说明.md)。
+详细来源、容量、断点和恢复方式见 [`docs/数据集导入说明.md`](docs/数据集导入说明.md)。
 
 ## 配置
 
-复制 `.env.example` 或通过环境变量配置：
+复制 `.env.example`，或直接设置环境变量：
 
 | 变量 | 默认值 | 说明 |
 |---|---|---|
-| `APP_DATA_DIR` | `./data` | SQLite 和参考图片目录 |
+| `APP_DATA_DIR` | `./data` | SQLite、模型和参考图片目录 |
 | `FACE_ENGINE` | `opencv_sface` | `opencv_sface`、`demo` 或 `deepface` |
 | `OPENCV_MODEL_DIR` | `./data/models` | YuNet 和 SFace 模型目录 |
+| `OPENCV_DETECTION_THRESHOLD` | `0.75` | YuNet 人脸检测阈值 |
 | `DEEPFACE_MODEL` | `Facenet512` | DeepFace 模型名称 |
 | `DEEPFACE_DETECTOR` | `opencv` | DeepFace 检测器 |
-| `MAX_UPLOAD_MB` | `10` | 单张图片大小限制 |
-| `SEARCH_TOP_K` | `5` | 默认候选数量 |
+| `MAX_UPLOAD_MB` | `10` | 单张上传或下载图片大小限制 |
+| `SEARCH_TOP_K` | `5` | 默认候选人物数量 |
 
-更换人脸模型后，历史向量通常不兼容，需要清空并重新录入参考图。
+更换人脸模型后，历史向量通常不兼容，需要使用同一模型重新生成人物库向量。
 
-## 数据规模升级
+## 项目结构
 
-当前内存索引适合 MVP 和约十万张以内的参考图片。超过这一规模后，把 `VectorIndex` 替换成 Qdrant：
-
-- collection 中保存归一化人脸向量；
-- payload 保存 `person_id`、`image_id`；
-- 使用 cosine distance；
-- 查询 Top 100 图片后继续按人物聚合。
-
-API 和前端不需要改变。
+```text
+app/
+├── main.py            # FastAPI 路由和业务闭环
+├── face_engine.py     # Demo、OpenCV SFace、DeepFace 引擎
+├── repository.py      # SQLite 元数据和 NumPy 向量索引
+├── source_import.py   # 远程图片下载与 SSRF 防护
+└── static/            # 浏览器界面
+scripts/               # 启动、模型、演示和数据集导入脚本
+tests/                 # API 与图片源安全测试
+docs/                  # API、数据集和验收说明
+data/                  # 本地数据，不进入 Git
+```
 
 ## 测试
 
 ```bash
+source .venv/bin/activate
 pytest -q
+python3 -m compileall -q app scripts tests
+node --check app/static/app.js
+docker compose config --quiet
 ```
 
-## 许可证与数据提醒
+当前自动化结果：`8 passed`。
 
-本项目代码不附带任何明星图片、人脸库或模型权重。
+## 数据规模与生产化
 
-- DeepFace 框架许可证不自动覆盖它加载的模型权重及训练数据；
-- InsightFace 官方预训练模型通常仅限非商业研究，商用前需要单独确认；
-- 录入参考照片前应核对照片许可证和人脸数据处理依据；
-- 不要把 CelebA、VGGFace2 或网络抓取图片直接作为商业人物库。
+当前 NumPy 内存索引适合 MVP 和约十万张以内的参考图片。更大规模建议替换为 Qdrant、Milvus 或 Faiss，并补充：
+
+- 基于真实正负样本的阈值标定、ROC 和误报率报告；
+- 人脸质量、年龄跨度和生成图域偏移评估；
+- 鉴权、审计日志、速率限制和数据删除流程；
+- 向量版本、模型版本及批量重建机制；
+- 数据处理依据、保留期限和用户权利响应流程。
+
+## 安全、隐私与法律边界
+
+- 不要把 API 直接暴露到公网；当前 MVP 没有用户认证和租户隔离；
+- 只导入具有合法处理依据、可核验来源和适用授权的图片；
+- 人脸向量可能属于敏感生物识别数据，应按适用法律和组织政策保护；
+- 图片来源记录只用于追溯，不代表自动获得版权或肖像授权；
+- 检索结果需要人工复核，不应作为执法、雇佣、信贷等高风险决定的唯一依据。
+
+安全问题报告方式见 [`SECURITY.md`](SECURITY.md)，参与开发前请阅读 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
+
+## 许可证状态
+
+本仓库目前未附加代码开源许可证。**公开可见不等于授予复制、修改或再分发权利。** 若准备接受外部使用和贡献，请由仓库所有者明确选择并添加 MIT、Apache-2.0 或其他适用许可证；模型、数据集与图片仍需分别遵守各自条款。
