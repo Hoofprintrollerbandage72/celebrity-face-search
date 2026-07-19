@@ -1,6 +1,6 @@
 # API 使用示例
 
-默认服务地址为 `http://127.0.0.1:8000`，交互式 OpenAPI 文档位于 `/docs`。
+默认服务地址为 `http://127.0.0.1:8000`，交互式 OpenAPI 文档位于 `/docs`。典型输入是待发布的 AI 短剧角色图；API 返回公众人物相似候选和来源线索，不返回侵权结论。
 
 ## 健康检查
 
@@ -102,7 +102,7 @@ curl -X POST http://127.0.0.1:8000/api/library/quick-source-import \
 curl http://127.0.0.1:8000/api/library/source-guide
 ```
 
-## 上传查询图
+## 上传 AI 角色查询图
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/search \
@@ -118,6 +118,8 @@ curl -X POST http://127.0.0.1:8000/api/search \
 - `similarity`：最佳单张参考图余弦相似度；
 - `aggregate_similarity`：最佳分数与 Top-3 均值的加权聚合；
 - `source_url`、`source_page_url`、`license_code`：最佳参考图追溯信息。
+
+业务层不要把 `aggregate_similarity` 直接显示为“侵权概率”。阈值应使用目标画风和实际生成模型的验证集完成标定，详细方法见 [`AI短剧角色图风险筛查指南.md`](AI短剧角色图风险筛查指南.md)。
 
 ## 人物库维护
 
@@ -138,4 +140,3 @@ curl -X DELETE http://127.0.0.1:8000/api/library/persons/PERSON_ID
 | `409` | 人物库为空、外部 ID 重复或向量维度不一致 |
 | `413` | 图片超过大小限制 |
 | `422` | 未检测到单一参考人脸、参数校验失败 |
-
